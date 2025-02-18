@@ -21,10 +21,10 @@ const Map = () => {
   }, []);
 
   return (
-    <div className="w-full max-w-5xl mx-auto p-4">
+    <div className="w-full max-w-[90%] mx-auto">
       <div
         ref={mapContainerRef}
-        className="w-full h-[500px] rounded-lg shadow-lg border border-gray-300"
+        className="w-full h-[800px] rounded-lg shadow-lg border border-gray-300"
       />
     </div>
   );
