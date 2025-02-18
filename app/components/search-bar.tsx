@@ -7,7 +7,12 @@ interface Suggestion {
   center: [number, number];
 }
 
-const SearchBar = ({ onSearch }: { onSearch: (query: string) => void }) => {
+interface SearchBarProps {
+  onSearch: (query: string) => void;
+  userLocation?: { lng: number; lat: number } | null;
+}
+
+const SearchBar = ({ onSearch, userLocation }: SearchBarProps) => {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -34,13 +39,21 @@ const SearchBar = ({ onSearch }: { onSearch: (query: string) => void }) => {
     }
 
     try {
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          input
-        )}.json?access_token=${
-          mapboxgl.accessToken
-        }&types=place,address&limit=5`
-      );
+      // Base URL and parameters
+      let url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+        input
+      )}.json?access_token=${mapboxgl.accessToken}`;
+
+      // Add proximity if user location is available
+      if (userLocation) {
+        url += `&proximity=${userLocation.lng},${userLocation.lat}`;
+      }
+
+      // Add other parameters
+      url +=
+        "&country=ZA&types=place,poi,address,locality,neighborhood&fuzzyMatch=true&language=en&limit=5";
+
+      const response = await fetch(url);
       const data = await response.json();
       setSuggestions(data.features || []);
     } catch (error) {

@@ -222,7 +222,7 @@ const Map = () => {
       `}</style>
       <div className="flex flex-col w-full max-w-[90%] mx-auto gap-6">
         {/* Search bar */}
-        <SearchBar onSearch={handleSearch} />
+        <SearchBar onSearch={handleSearch} userLocation={userLocation} />
 
         <div className="flex w-full gap-6">
           {/* Sidebar */}
