@@ -28,7 +28,7 @@ const Map = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [map, setMap] = useState<mapboxgl.Map | null>(null);
-  const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
+  const [markers, setMarkers] = useState<Record<number, mapboxgl.Marker>>({});
   const [userLocation, setUserLocation] = useState<{
     lng: number;
     lat: number;
@@ -36,6 +36,7 @@ const Map = () => {
   const [searchMarker, setSearchMarker] = useState<mapboxgl.Marker | null>(
     null
   );
+  const [activePopup, setActivePopup] = useState<number | null>(null);
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -54,7 +55,8 @@ const Map = () => {
     if (!map) return;
 
     // Remove old markers
-    markers.forEach((marker) => marker.remove());
+    Object.values(markers).forEach((marker) => marker.remove());
+    setActivePopup(null);
 
     // Filter deals based on category
     const filteredDeals =
@@ -63,22 +65,23 @@ const Map = () => {
         : deals.filter((deal) => deal.category === selectedCategory);
 
     // Add new markers
-    const newMarkers = filteredDeals.map((deal) => {
-      const config =
-        categoryConfig[deal.category as keyof typeof categoryConfig];
-      const markerElement = document.createElement("div");
-      markerElement.className = "marker";
-      markerElement.innerHTML = `
+    const newMarkers = filteredDeals.reduce(
+      (acc: Record<number, mapboxgl.Marker>, deal) => {
+        const config =
+          categoryConfig[deal.category as keyof typeof categoryConfig];
+        const markerElement = document.createElement("div");
+        markerElement.className = "marker";
+        markerElement.innerHTML = `
         <div class="w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2"
              style="background-color: ${config?.color || "#3B82F6"}">
           ${config?.icon || ""}
         </div>
       `;
 
-      const popup = new mapboxgl.Popup({
-        offset: 25,
-        className: "custom-popup",
-      }).setHTML(`
+        const popup = new mapboxgl.Popup({
+          offset: 25,
+          className: "custom-popup",
+        }).setHTML(`
         <div class="p-4 min-w-[200px]">
           <h3 class="font-bold text-gray-900 text-lg mb-1">${deal.name}</h3>
           <span class="inline-block px-2 py-1 rounded-full text-sm font-medium" 
@@ -88,13 +91,16 @@ const Map = () => {
         </div>
       `);
 
-      const marker = new mapboxgl.Marker({ element: markerElement })
-        .setLngLat([deal.location.lng, deal.location.lat])
-        .setPopup(popup)
-        .addTo(map);
+        const marker = new mapboxgl.Marker({ element: markerElement })
+          .setLngLat([deal.location.lng, deal.location.lat])
+          .setPopup(popup)
+          .addTo(map);
 
-      return marker;
-    });
+        acc[deal.id] = marker;
+        return acc;
+      },
+      {}
+    );
 
     setMarkers(newMarkers);
   }, [selectedCategory, map]);
@@ -185,6 +191,16 @@ const Map = () => {
     );
   };
 
+  const closeAllPopups = () => {
+    Object.values(markers).forEach((marker) => {
+      const popup = marker.getPopup();
+      if (popup && popup.isOpen()) {
+        popup.remove();
+      }
+    });
+    setActivePopup(null);
+  };
+
   return (
     <>
       <style jsx global>{`
@@ -262,6 +278,14 @@ const Map = () => {
                       zoom: 15,
                       duration: 1500,
                     });
+
+                    if (activePopup === deal.id) {
+                      closeAllPopups();
+                    } else {
+                      closeAllPopups();
+                      markers[deal.id]?.togglePopup();
+                      setActivePopup(deal.id);
+                    }
                   }}
                   className="p-4 rounded-lg border border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-all duration-200 shadow-sm hover:shadow"
                 >
