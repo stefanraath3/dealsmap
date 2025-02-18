@@ -8,6 +8,21 @@ mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
 
 const categories = ["All", "Food", "Shopping", "Fitness"];
 
+const categoryConfig = {
+  Food: {
+    color: "#EF4444", // red-500
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="white" stroke="white"><path d="M11 3V11H3V13H11V21H13V13H21V11H13V3H11Z"/></svg>`,
+  },
+  Shopping: {
+    color: "#8B5CF6", // violet-500
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="white" stroke="white"><path d="M19 6h-2c0-2.76-2.24-5-5-5S7 3.24 7 6H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-7-3c1.66 0 3 1.34 3 3H9c0-1.66 1.34-3 3-3zm7 17H5V8h14v12z"/></svg>`,
+  },
+  Fitness: {
+    color: "#10B981", // emerald-500
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="white" stroke="white"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z"/></svg>`,
+  },
+};
+
 const Map = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -71,11 +86,14 @@ const Map = () => {
 
     // Add new markers
     const newMarkers = filteredDeals.map((deal) => {
+      const config =
+        categoryConfig[deal.category as keyof typeof categoryConfig];
       const markerElement = document.createElement("div");
       markerElement.className = "marker";
       markerElement.innerHTML = `
-        <div class="w-8 h-8 bg-blue-600 rounded-full border-2 border-white shadow-lg flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2">
-          <div class="w-2 h-2 bg-white rounded-full"></div>
+        <div class="w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2"
+             style="background-color: ${config?.color || "#3B82F6"}">
+          ${config?.icon || ""}
         </div>
       `;
 
@@ -85,7 +103,8 @@ const Map = () => {
       }).setHTML(`
         <div class="p-4 min-w-[200px]">
           <h3 class="font-bold text-gray-900 text-lg mb-1">${deal.name}</h3>
-          <span class="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+          <span class="inline-block px-2 py-1 rounded-full text-sm font-medium" 
+                style="background-color: ${config?.color}20; color: ${config?.color}">
             ${deal.category}
           </span>
         </div>
