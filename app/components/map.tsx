@@ -71,9 +71,29 @@ const Map = () => {
 
     // Add new markers
     const newMarkers = filteredDeals.map((deal) => {
-      const marker = new mapboxgl.Marker({ color: "red" })
+      const markerElement = document.createElement("div");
+      markerElement.className = "marker";
+      markerElement.innerHTML = `
+        <div class="w-8 h-8 bg-blue-600 rounded-full border-2 border-white shadow-lg flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2">
+          <div class="w-2 h-2 bg-white rounded-full"></div>
+        </div>
+      `;
+
+      const popup = new mapboxgl.Popup({
+        offset: 25,
+        className: "custom-popup",
+      }).setHTML(`
+        <div class="p-4 min-w-[200px]">
+          <h3 class="font-bold text-gray-900 text-lg mb-1">${deal.name}</h3>
+          <span class="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+            ${deal.category}
+          </span>
+        </div>
+      `);
+
+      const marker = new mapboxgl.Marker({ element: markerElement })
         .setLngLat([deal.location.lng, deal.location.lat])
-        .setPopup(new mapboxgl.Popup().setHTML(`<h3>${deal.name}</h3>`))
+        .setPopup(popup)
         .addTo(map);
 
       return marker;
@@ -83,29 +103,52 @@ const Map = () => {
   }, [selectedCategory, map]);
 
   return (
-    <div className="w-full max-w-[90%] mx-auto">
-      {/* Category Filter Buttons */}
-      <div className="flex justify-center space-x-4 mb-4">
-        {categories.map((category) => (
-          <button
-            key={category}
-            onClick={() => setSelectedCategory(category)}
-            className={`px-4 py-2 rounded-md ${
-              selectedCategory === category
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200"
-            }`}
-          >
-            {category}
-          </button>
-        ))}
-      </div>
+    <>
+      <style jsx global>{`
+        .custom-popup .mapboxgl-popup-content {
+          padding: 0;
+          border-radius: 12px;
+          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1),
+            0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .custom-popup .mapboxgl-popup-close-button {
+          padding: 6px 10px;
+          right: 2px;
+          top: 2px;
+          color: #4b5563;
+          font-size: 20px;
+          font-weight: 500;
+          border-radius: 50%;
+        }
+        .custom-popup .mapboxgl-popup-close-button:hover {
+          background-color: #f3f4f6;
+          color: #1f2937;
+        }
+      `}</style>
+      <div className="w-full max-w-[90%] mx-auto">
+        {/* Category Filter Buttons */}
+        <div className="flex justify-center space-x-4 mb-6">
+          {categories.map((category) => (
+            <button
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              className={`px-6 py-2.5 rounded-full font-medium transition-all duration-200 shadow-sm hover:shadow-md ${
+                selectedCategory === category
+                  ? "bg-blue-600 text-white hover:bg-blue-700"
+                  : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
+              }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
 
-      <div
-        ref={mapContainerRef}
-        className="w-full h-[800px] rounded-lg shadow-lg border border-gray-300"
-      />
-    </div>
+        <div
+          ref={mapContainerRef}
+          className="w-full h-[800px] rounded-xl shadow-lg border border-gray-200 overflow-hidden"
+        />
+      </div>
+    </>
   );
 };
 
