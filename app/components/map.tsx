@@ -125,28 +125,65 @@ const Map = () => {
           color: #1f2937;
         }
       `}</style>
-      <div className="w-full max-w-[90%] mx-auto">
-        {/* Category Filter Buttons */}
-        <div className="flex justify-center space-x-4 mb-6">
-          {categories.map((category) => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-6 py-2.5 rounded-full font-medium transition-all duration-200 shadow-sm hover:shadow-md ${
-                selectedCategory === category
-                  ? "bg-blue-600 text-white hover:bg-blue-700"
-                  : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-              }`}
-            >
-              {category}
-            </button>
-          ))}
+      <div className="flex w-full max-w-[90%] mx-auto gap-6">
+        {/* Sidebar */}
+        <div className="w-1/3 bg-white p-4 rounded-xl shadow-lg h-[800px] overflow-y-auto border border-gray-200">
+          <h2 className="text-xl font-bold mb-4 text-gray-900">
+            Available Deals
+          </h2>
+
+          {/* Category Filter Buttons */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            {categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-4 py-1.5 rounded-full font-medium transition-all duration-200 text-sm ${
+                  selectedCategory === category
+                    ? "bg-blue-600 text-white hover:bg-blue-700"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+
+          {/* Deal Listings */}
+          <div className="space-y-3">
+            {(selectedCategory === "All"
+              ? deals
+              : deals.filter((deal) => deal.category === selectedCategory)
+            ).map((deal) => (
+              <div
+                key={deal.id}
+                onClick={() => {
+                  map?.flyTo({
+                    center: [deal.location.lng, deal.location.lat],
+                    zoom: 15,
+                    duration: 1500,
+                  });
+                }}
+                className="p-4 rounded-lg border border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-all duration-200 shadow-sm hover:shadow"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  {deal.name}
+                </h3>
+                <span className="inline-block px-2.5 py-0.5 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                  {deal.category}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div
-          ref={mapContainerRef}
-          className="w-full h-[800px] rounded-xl shadow-lg border border-gray-200 overflow-hidden"
-        />
+        {/* Map Container */}
+        <div className="flex-1">
+          <div
+            ref={mapContainerRef}
+            className="w-full h-[800px] rounded-xl shadow-lg border border-gray-200 overflow-hidden"
+          />
+        </div>
       </div>
     </>
   );
