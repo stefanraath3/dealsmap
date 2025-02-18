@@ -10,18 +10,24 @@ const Map = () => {
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
-
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: "mapbox://styles/mapbox/streets-v11", // Change theme if needed
-      center: [-74.006, 40.7128], // Default: New York City
+      center: [18.4241, -33.9249], // Cape Town
       zoom: 12,
     });
 
     return () => map.remove();
   }, []);
 
-  return <div ref={mapContainerRef} className="w-full h-full" />;
+  return (
+    <div className="w-full max-w-5xl mx-auto p-4">
+      <div
+        ref={mapContainerRef}
+        className="w-full h-[500px] rounded-lg shadow-lg border border-gray-300"
+      />
+    </div>
+  );
 };
 
 export default Map;
