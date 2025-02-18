@@ -236,75 +236,87 @@ const Map = () => {
           background-color: #f3f4f6 !important;
         }
       `}</style>
-      <div className="flex flex-col w-full max-w-[90%] mx-auto gap-6">
+      <div className="flex flex-col w-full gap-6">
         {/* Search bar */}
-        <SearchBar onSearch={handleSearch} userLocation={userLocation} />
+        <div className="relative z-10">
+          <SearchBar onSearch={handleSearch} userLocation={userLocation} />
+        </div>
 
-        <div className="flex w-full gap-6">
+        <div className="flex flex-col lg:flex-row w-full gap-6">
           {/* Sidebar */}
-          <div className="w-1/3 bg-white p-4 rounded-xl shadow-lg h-[800px] overflow-y-auto border border-gray-200">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">
-              Available Deals
-            </h2>
+          <div className="w-full lg:w-1/3 bg-white rounded-xl shadow-lg h-[400px] lg:h-[800px] overflow-y-auto border border-gray-200">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                Available Deals
+              </h2>
 
-            {/* Category Filter Buttons */}
-            <div className="flex flex-wrap gap-2 mb-6">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-4 py-1.5 rounded-full font-medium transition-all duration-200 text-sm ${
-                    selectedCategory === category
-                      ? "bg-blue-600 text-white hover:bg-blue-700"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
+              {/* Category Filter Buttons */}
+              <div className="flex flex-wrap gap-2 mb-6">
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`px-4 py-1.5 rounded-full font-medium transition-all duration-200 text-sm ${
+                      selectedCategory === category
+                        ? "bg-rose-500 text-white hover:bg-rose-600"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
 
-            {/* Deal Listings */}
-            <div className="space-y-3">
-              {(selectedCategory === "All"
-                ? deals
-                : deals.filter((deal) => deal.category === selectedCategory)
-              ).map((deal) => (
-                <div
-                  key={deal.id}
-                  onClick={() => {
-                    map?.flyTo({
-                      center: [deal.location.lng, deal.location.lat],
-                      zoom: 15,
-                      duration: 1500,
-                    });
+              {/* Deal Listings */}
+              <div className="space-y-3">
+                {(selectedCategory === "All"
+                  ? deals
+                  : deals.filter((deal) => deal.category === selectedCategory)
+                ).map((deal) => (
+                  <div
+                    key={deal.id}
+                    onClick={() => {
+                      map?.flyTo({
+                        center: [deal.location.lng, deal.location.lat],
+                        zoom: 15,
+                        duration: 1500,
+                      });
 
-                    if (activePopup === deal.id) {
-                      closeAllPopups();
-                    } else {
-                      closeAllPopups();
-                      markers[deal.id]?.togglePopup();
-                      setActivePopup(deal.id);
-                    }
-                  }}
-                  className="p-4 rounded-lg border border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-all duration-200 shadow-sm hover:shadow"
-                >
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    {deal.name}
-                  </h3>
-                  <span className="inline-block px-2.5 py-0.5 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                    {deal.category}
-                  </span>
-                </div>
-              ))}
+                      if (activePopup === deal.id) {
+                        closeAllPopups();
+                      } else {
+                        closeAllPopups();
+                        markers[deal.id]?.togglePopup();
+                        setActivePopup(deal.id);
+                      }
+                    }}
+                    className="p-4 rounded-lg border border-gray-200 hover:border-gray-300 bg-white hover:shadow-md cursor-pointer transition-all duration-200"
+                  >
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      {deal.name}
+                    </h3>
+                    <span
+                      className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium ${
+                        deal.category === "Food"
+                          ? "bg-red-100 text-red-700"
+                          : deal.category === "Shopping"
+                          ? "bg-purple-100 text-purple-700"
+                          : "bg-emerald-100 text-emerald-700"
+                      }`}
+                    >
+                      {deal.category}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Map Container */}
-          <div className="flex-1 relative">
+          <div className="flex-1 relative h-[400px] lg:h-[800px]">
             <div
               ref={mapContainerRef}
-              className="w-full h-[800px] rounded-xl shadow-lg border border-gray-200 overflow-hidden"
+              className="w-full h-full rounded-xl shadow-lg border border-gray-200 overflow-hidden"
             />
             {/* Location Button */}
             <button
