@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:generate": "npx drizzle-kit generate",
+    "db:migrate": "npx drizzle-kit migrate"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.48.1",
@@ -14,6 +16,7 @@
     "drizzle-orm": "^0.39.3",
     "mapbox-gl": "^3.10.0",
     "next": "15.1.7",
+    "pg": "^8.13.3",
     "postgres": "^3.4.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
