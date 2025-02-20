@@ -57,6 +57,8 @@ const Map = ({
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [selectedMarkerElement, setSelectedMarkerElement] =
+    useState<HTMLElement | null>(null);
 
   useEffect(() => {
     const fetchDeals = async () => {
@@ -175,18 +177,15 @@ const Map = ({
       const newMarkers: Record<number, mapboxgl.Marker> = {};
 
       for (const deal of fullyFilteredDeals) {
-        const config =
-          categoryConfig[deal.category as keyof typeof categoryConfig];
-
         const lng = parseFloat(deal.longitude);
         const lat = parseFloat(deal.latitude);
 
         const markerElement = document.createElement("div");
-        markerElement.className = "marker";
+        markerElement.className =
+          "marker cursor-pointer transform transition-all duration-200 hover:scale-110";
         markerElement.innerHTML = `
-          <div class="w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2"
-               style="background-color: ${config?.color || "#3B82F6"}">
-            ${config?.icon || ""}
+          <div class="px-3 py-1.5 rounded-full bg-white shadow-lg border border-gray-100 font-medium text-sm whitespace-nowrap text-gray-900 hover:border-gray-300 transition-all">
+            R${deal.price || "0"}
           </div>
         `;
 
@@ -194,13 +193,31 @@ const Map = ({
           .setLngLat([lng, lat])
           .addTo(map);
 
-        marker.getElement().addEventListener("click", () => {
+        marker.getElement().addEventListener("click", (e) => {
+          // Reset previous selected marker
+          if (selectedMarkerElement) {
+            selectedMarkerElement.classList.remove("selected");
+          }
+
+          // Update selected marker
+          markerElement.classList.add("selected");
+          setSelectedMarkerElement(markerElement);
+
           setSelectedDeal(deal);
+
+          // Calculate optimal position to show both marker and card
+          const markerPos = map.project([lng, lat]);
+          const optimalLng =
+            lng + (markerPos.x > window.innerWidth / 2 ? -0.002 : 0.002);
+
           map.flyTo({
-            center: [lng, lat],
+            center: [optimalLng, lat],
             zoom: 15,
             essential: true,
+            duration: 800,
           });
+
+          e.stopPropagation();
         });
 
         newMarkers[deal.id] = marker;
@@ -208,6 +225,15 @@ const Map = ({
 
       setMarkers(newMarkers);
     };
+
+    // Clear selected deal when clicking on the map
+    map.on("click", () => {
+      setSelectedDeal(null);
+      if (selectedMarkerElement) {
+        selectedMarkerElement.classList.remove("selected");
+        setSelectedMarkerElement(null);
+      }
+    });
 
     addMarkers();
   }, [selectedCategory, map, deals, loading, showMap, filters]);
@@ -325,6 +351,17 @@ const Map = ({
         .mapboxgl-ctrl-group button:hover {
           background-color: #f3f4f6 !important;
         }
+        .marker {
+          transform-origin: bottom center;
+        }
+        .marker.selected > div {
+          background-color: #111827;
+          color: white;
+          border-color: #111827;
+          transform: scale(1.1);
+          box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1),
+            0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
       `}</style>
       <div
         data-map-component
@@ -372,15 +409,27 @@ const Map = ({
 
             {/* Selected deal card */}
             {selectedDeal && showMap && (
-              <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-full max-w-lg px-4">
-                <div className="relative">
+              <div
+                className="fixed left-1/2 transform -translate-x-1/2 z-10 w-full max-w-sm transition-all duration-300"
+                style={{
+                  bottom: "2rem",
+                }}
+              >
+                <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden">
                   <button
-                    onClick={() => setSelectedDeal(null)}
-                    className="absolute -top-2 -right-2 z-10 p-1 bg-white rounded-full shadow-lg hover:bg-gray-50"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedDeal(null);
+                      if (selectedMarkerElement) {
+                        selectedMarkerElement.classList.remove("selected");
+                        setSelectedMarkerElement(null);
+                      }
+                    }}
+                    className="absolute top-4 right-4 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-colors"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 text-gray-500"
+                      className="h-4 w-4 text-gray-600"
                       viewBox="0 0 20 20"
                       fill="currentColor"
                     >
@@ -391,7 +440,9 @@ const Map = ({
                       />
                     </svg>
                   </button>
-                  <DealCard deal={selectedDeal} />
+                  <div className="p-4">
+                    <DealCard deal={selectedDeal} />
+                  </div>
                 </div>
               </div>
             )}
