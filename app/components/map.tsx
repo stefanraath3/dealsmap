@@ -4,6 +4,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { useEffect, useRef, useState } from "react";
 import { Deal } from "../data/deals";
 import DealCard from "./DealCard";
+import DealCardSkeleton from "./DealCardSkeleton";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
 
@@ -270,7 +271,11 @@ const Map = ({
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
               {loading ? (
-                <div className="text-gray-600">Loading deals...</div>
+                <>
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <DealCardSkeleton key={i} />
+                  ))}
+                </>
               ) : (
                 filteredDeals.map((deal) => (
                   <DealCard key={deal.id} deal={deal} />
