@@ -27,11 +27,11 @@ export default function Home() {
         showMap={showMap}
         onSearch={handleSearch}
         userLocation={userLocation}
-        selectedCategory={selectedCategory}
-        onCategoryChange={setSelectedCategory}
       />
 
-      <main className="min-h-screen bg-gray-50">
+      <main
+        className={`min-h-screen bg-gray-50 ${showMap ? "pt-28" : "pt-36"}`}
+      >
         <Map
           showMap={showMap}
           setShowMap={setShowMap}

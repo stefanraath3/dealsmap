@@ -8,12 +8,20 @@ interface Suggestion {
 }
 
 interface SearchBarProps {
-  onSearch: (query: string) => void;
+  onSearch?: (query: string) => void;
   userLocation?: { lng: number; lat: number } | null;
   compact?: boolean;
+  isExpanded?: boolean;
+  onExpandedChange?: (expanded: boolean) => void;
 }
 
-const SearchBar = ({ onSearch, userLocation, compact }: SearchBarProps) => {
+const SearchBar = ({
+  onSearch,
+  userLocation,
+  compact,
+  isExpanded,
+  onExpandedChange,
+}: SearchBarProps) => {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -26,12 +34,13 @@ const SearchBar = ({ onSearch, userLocation, compact }: SearchBarProps) => {
         !searchContainerRef.current.contains(event.target as Node)
       ) {
         setShowSuggestions(false);
+        onExpandedChange?.(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [onExpandedChange]);
 
   const fetchSuggestions = async (input: string) => {
     if (!input.trim()) {
@@ -70,25 +79,37 @@ const SearchBar = ({ onSearch, userLocation, compact }: SearchBarProps) => {
     setQuery(suggestion.place_name);
     setSuggestions([]);
     setShowSuggestions(false);
-    onSearch(suggestion.place_name);
+    onExpandedChange?.(false);
+    onSearch?.(suggestion.place_name);
+  };
+
+  const handleFocus = () => {
+    setShowSuggestions(true);
+    onExpandedChange?.(true);
   };
 
   return (
     <div
       ref={searchContainerRef}
-      className={compact ? "w-full" : "w-full max-w-3xl mx-auto"}
+      className={`relative ${compact ? "w-full" : "w-full max-w-3xl mx-auto"}`}
     >
-      <div className="relative">
+      <div
+        className={`transition-all duration-300 ${
+          isExpanded
+            ? "bg-white rounded-t-3xl shadow-xl border border-b-0 border-gray-200"
+            : "bg-gray-50 rounded-full hover:shadow-md"
+        }`}
+      >
         <div className="relative flex items-center">
           <input
             type="text"
             value={query}
             onChange={handleInputChange}
-            onFocus={() => setShowSuggestions(true)}
-            placeholder="Search location..."
+            onFocus={handleFocus}
+            placeholder="Search deals..."
             className={`w-full pl-14 pr-6 ${
               compact ? "py-2.5" : "py-4"
-            } bg-white rounded-full shadow-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-rose-500 transition-shadow duration-200`}
+            } bg-transparent text-gray-900 placeholder-gray-500 focus:outline-none transition-shadow duration-200`}
           />
           <div className="absolute left-5 text-gray-400">
             <svg
@@ -105,16 +126,37 @@ const SearchBar = ({ onSearch, userLocation, compact }: SearchBarProps) => {
             </svg>
           </div>
         </div>
+
+        {isExpanded && (
+          <div className="px-6 py-4 border-t border-gray-200">
+            <div className="flex gap-6">
+              <button className="flex-1 text-left px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors">
+                <div className="text-sm font-medium text-gray-800">Deals</div>
+                <div className="text-sm text-gray-500">Find local deals</div>
+              </button>
+              <button className="flex-1 text-left px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors">
+                <div className="text-sm font-medium text-gray-800">Events</div>
+                <div className="text-sm text-gray-500">Discover events</div>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Suggestions dropdown */}
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute w-full mt-2 bg-white rounded-3xl shadow-lg z-50 max-h-96 overflow-auto border border-gray-100">
+        <div
+          className={`absolute w-full bg-white ${
+            isExpanded ? "rounded-b-3xl" : "rounded-3xl mt-2"
+          } shadow-xl z-50 max-h-96 overflow-auto border border-gray-200 ${
+            isExpanded ? "border-t-0" : ""
+          }`}
+        >
           {suggestions.map((suggestion, index) => (
             <div
               key={index}
               onClick={() => handleSuggestionClick(suggestion)}
-              className="px-6 py-4 hover:bg-gray-50 cursor-pointer flex items-center gap-3 border-b last:border-b-0 border-gray-100"
+              className="px-6 py-4 hover:bg-gray-50 cursor-pointer flex items-center gap-3 border-b last:border-b-0 border-gray-200"
             >
               <div className="text-gray-400">
                 <svg
