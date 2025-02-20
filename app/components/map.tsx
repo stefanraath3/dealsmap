@@ -62,8 +62,8 @@ const Map = () => {
     const newMap = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: "mapbox://styles/mapbox/streets-v11",
-      center: [18.4233, -33.9188],
-      zoom: 12,
+      center: [18.4241, -33.9249], // Cape Town city center
+      zoom: 13,
     });
 
     setMap(newMap);
@@ -84,81 +84,65 @@ const Map = () => {
         : deals.filter((deal) => deal.category === selectedCategory);
 
     // Add new markers
-    const addMarkers = async () => {
+    const addMarkers = () => {
       const newMarkers: Record<number, mapboxgl.Marker> = {};
 
       for (const deal of filteredDeals) {
         const config =
           categoryConfig[deal.category as keyof typeof categoryConfig];
 
-        try {
-          // Geocode the location
-          const response = await fetch(
-            `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-              deal.location
-            )}.json?access_token=${mapboxgl.accessToken}&country=ZA`
-          );
-          const data = await response.json();
+        // Use the exact coordinates from our database
+        const lng = parseFloat(deal.longitude);
+        const lat = parseFloat(deal.latitude);
 
-          if (data.features && data.features.length > 0) {
-            const [lng, lat] = data.features[0].center;
+        const markerElement = document.createElement("div");
+        markerElement.className = "marker";
+        markerElement.innerHTML = `
+          <div class="w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2"
+               style="background-color: ${config?.color || "#3B82F6"}">
+            ${config?.icon || ""}
+          </div>
+        `;
 
-            const markerElement = document.createElement("div");
-            markerElement.className = "marker";
-            markerElement.innerHTML = `
-              <div class="w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2"
-                   style="background-color: ${config?.color || "#3B82F6"}">
-                ${config?.icon || ""}
-              </div>
-            `;
+        const popup = new mapboxgl.Popup({
+          offset: 25,
+          className: "custom-popup",
+        }).setHTML(`
+          <div class="p-4 min-w-[200px]">
+            <h3 class="font-bold text-gray-900 text-lg mb-1">${deal.title}</h3>
+            ${
+              deal.description
+                ? `<p class="text-gray-600 mb-2">${deal.description}</p>`
+                : ""
+            }
+            ${
+              deal.price
+                ? `<p class="text-gray-900 font-medium mb-2">R${deal.price}</p>`
+                : ""
+            }
+            ${
+              deal.timeWindow
+                ? `<p class="text-gray-600 text-sm">${deal.timeWindow}</p>`
+                : ""
+            }
+            ${
+              deal.day ? `<p class="text-gray-600 text-sm">${deal.day}</p>` : ""
+            }
+            <span class="inline-block px-2 py-1 rounded-full text-sm font-medium mt-2" 
+                  style="background-color: ${config?.color}20; color: ${
+          config?.color
+        }">
+              ${deal.category}
+            </span>
+          </div>
+        `);
 
-            const popup = new mapboxgl.Popup({
-              offset: 25,
-              className: "custom-popup",
-            }).setHTML(`
-              <div class="p-4 min-w-[200px]">
-                <h3 class="font-bold text-gray-900 text-lg mb-1">${
-                  deal.title
-                }</h3>
-                ${
-                  deal.description
-                    ? `<p class="text-gray-600 mb-2">${deal.description}</p>`
-                    : ""
-                }
-                ${
-                  deal.price
-                    ? `<p class="text-gray-900 font-medium mb-2">R${deal.price}</p>`
-                    : ""
-                }
-                ${
-                  deal.timeWindow
-                    ? `<p class="text-gray-600 text-sm">${deal.timeWindow}</p>`
-                    : ""
-                }
-                ${
-                  deal.day
-                    ? `<p class="text-gray-600 text-sm">${deal.day}</p>`
-                    : ""
-                }
-                <span class="inline-block px-2 py-1 rounded-full text-sm font-medium mt-2" 
-                      style="background-color: ${config?.color}20; color: ${
-              config?.color
-            }">
-                  ${deal.category}
-                </span>
-              </div>
-            `);
+        const marker = new mapboxgl.Marker({ element: markerElement })
+          .setLngLat([lng, lat])
+          .setPopup(popup)
+          .addTo(map);
 
-            const marker = new mapboxgl.Marker({ element: markerElement })
-              .setLngLat([lng, lat])
-              .setPopup(popup)
-              .addTo(map);
-
-            newMarkers[deal.id] = marker;
-          }
-        } catch (error) {
-          console.error("Error geocoding location:", error);
-        }
+        newMarkers[deal.id] = marker;
       }
 
       setMarkers(newMarkers);

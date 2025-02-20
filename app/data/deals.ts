@@ -3,6 +3,8 @@ export interface Deal {
   title: string;
   description: string | null;
   location: string;
+  latitude: string;
+  longitude: string;
   category: string | null;
   price: string | null;
   day: string | null;
