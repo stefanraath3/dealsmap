@@ -31,6 +31,12 @@ interface MapProps {
   selectedCategory: string;
   setSelectedCategory: (category: string) => void;
   setUserLocation: (location: { lng: number; lat: number } | null) => void;
+  filters: {
+    price: string;
+    dealType: string;
+    dayOfWeek: string;
+    timeOfDay: string;
+  };
 }
 
 const Map = ({
@@ -39,6 +45,7 @@ const Map = ({
   selectedCategory,
   setSelectedCategory,
   setUserLocation,
+  filters,
 }: MapProps) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<mapboxgl.Map | null>(null);
@@ -81,6 +88,72 @@ const Map = ({
     return () => newMap.remove();
   }, [showMap]);
 
+  const filterDeals = (deals: Deal[]) => {
+    return deals.filter((deal) => {
+      // Filter by price
+      if (filters.price !== "Any price") {
+        const price = deal.price ? parseFloat(deal.price) : 0;
+        switch (filters.price) {
+          case "Under R50":
+            if (price >= 50) return false;
+            break;
+          case "R50 - R100":
+            if (price < 50 || price > 100) return false;
+            break;
+          case "R100 - R200":
+            if (price < 100 || price > 200) return false;
+            break;
+          case "R200+":
+            if (price <= 200) return false;
+            break;
+        }
+      }
+
+      // Filter by deal type
+      if (
+        filters.dealType !== "All deals" &&
+        deal.category !== filters.dealType
+      ) {
+        return false;
+      }
+
+      // Filter by day of week
+      if (filters.dayOfWeek !== "Any day") {
+        if (deal.day !== filters.dayOfWeek && deal.day !== "Every day") {
+          return false;
+        }
+      }
+
+      // Filter by time of day
+      if (filters.timeOfDay !== "Any time" && deal.timeWindow) {
+        const timeWindow = deal.timeWindow.toLowerCase();
+        switch (filters.timeOfDay) {
+          case "Morning (6AM-12PM)":
+            if (!timeWindow.includes("am") && !timeWindow.includes("morning"))
+              return false;
+            break;
+          case "Afternoon (12PM-5PM)":
+            if (!timeWindow.includes("pm") && !timeWindow.includes("afternoon"))
+              return false;
+            break;
+          case "Evening (5PM-10PM)":
+            if (!timeWindow.includes("evening") && !timeWindow.match(/[5-9]pm/))
+              return false;
+            break;
+          case "Late Night (10PM-6AM)":
+            if (
+              !timeWindow.includes("night") &&
+              !timeWindow.match(/1[0-2]pm|[1-6]am/)
+            )
+              return false;
+            break;
+        }
+      }
+
+      return true;
+    });
+  };
+
   useEffect(() => {
     if (!map || loading || !showMap) return;
 
@@ -88,17 +161,20 @@ const Map = ({
     Object.values(markers).forEach((marker) => marker.remove());
     setActivePopup(null);
 
-    // Filter deals based on category
-    const filteredDeals =
+    // Filter deals based on category and other filters
+    const filteredByCategory =
       selectedCategory === "All"
         ? deals
         : deals.filter((deal) => deal.category === selectedCategory);
+
+    // Apply additional filters
+    const fullyFilteredDeals = filterDeals(filteredByCategory);
 
     // Add new markers
     const addMarkers = () => {
       const newMarkers: Record<number, mapboxgl.Marker> = {};
 
-      for (const deal of filteredDeals) {
+      for (const deal of fullyFilteredDeals) {
         const config =
           categoryConfig[deal.category as keyof typeof categoryConfig];
 
@@ -134,7 +210,7 @@ const Map = ({
     };
 
     addMarkers();
-  }, [selectedCategory, map, deals, loading, showMap]);
+  }, [selectedCategory, map, deals, loading, showMap, filters]);
 
   const handleSearch = async (query: string) => {
     if (!map || !showMap) return;
@@ -215,11 +291,6 @@ const Map = ({
     );
   };
 
-  const filteredDeals =
-    selectedCategory === "All"
-      ? deals
-      : deals.filter((deal) => deal.category === selectedCategory);
-
   return (
     <>
       <style jsx global>{`
@@ -277,9 +348,11 @@ const Map = ({
                   ))}
                 </>
               ) : (
-                filteredDeals.map((deal) => (
-                  <DealCard key={deal.id} deal={deal} />
-                ))
+                filterDeals(
+                  selectedCategory === "All"
+                    ? deals
+                    : deals.filter((deal) => deal.category === selectedCategory)
+                ).map((deal) => <DealCard key={deal.id} deal={deal} />)
               )}
             </div>
           </div>
