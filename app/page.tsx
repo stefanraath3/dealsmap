@@ -51,7 +51,7 @@ export default function Home() {
       />
 
       <main
-        className={`min-h-screen bg-gray-50 ${showMap ? "pt-24" : "pt-32"}`}
+        className={`min-h-screen bg-gray-50 ${showMap ? "pt-16" : "pt-20"}`}
       >
         <Map
           showMap={showMap}

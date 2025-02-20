@@ -329,7 +329,7 @@ const Map = ({
       <div
         data-map-component
         className={`flex flex-col w-full min-h-screen ${
-          showMap ? "pt-16" : "pt-[120px]"
+          showMap ? "pt-12" : "pt-[96px]"
         }`}
       >
         {/* Main content */}

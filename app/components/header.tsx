@@ -87,7 +87,7 @@ const Header = ({
           {/* Top header */}
           <div
             className={`relative z-20 border-b border-gray-200 transition-all duration-300 ${
-              isScrolled ? "py-3" : "py-5"
+              isScrolled ? "py-2" : "py-3"
             }`}
           >
             <div className="max-w-[2520px] mx-auto">
@@ -159,7 +159,7 @@ const Header = ({
           {/* Bottom header - Filters */}
           <div className="relative z-20 border-b border-gray-200 bg-white">
             <div className="max-w-[2520px] mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center gap-6 py-3">
+              <div className="flex items-center gap-6 py-2">
                 <div className="flex items-center gap-4 text-sm">
                   <div className="relative">
                     <button
@@ -168,7 +168,7 @@ const Header = ({
                           activeFilter === "price" ? null : "price"
                         )
                       }
-                      className={`px-4 py-2.5 rounded-full font-medium transition-colors whitespace-nowrap ${
+                      className={`px-4 py-2 rounded-full font-medium transition-colors whitespace-nowrap ${
                         selectedFilters.price !== "Any price"
                           ? "bg-rose-50 text-rose-600 hover:bg-rose-100"
                           : "bg-gray-100 text-gray-800 hover:bg-gray-200"
@@ -193,7 +193,7 @@ const Header = ({
                           activeFilter === "dealType" ? null : "dealType"
                         )
                       }
-                      className={`px-4 py-2.5 rounded-full font-medium transition-colors whitespace-nowrap ${
+                      className={`px-4 py-2 rounded-full font-medium transition-colors whitespace-nowrap ${
                         selectedFilters.dealType !== "All deals"
                           ? "bg-rose-50 text-rose-600 hover:bg-rose-100"
                           : "bg-gray-100 text-gray-800 hover:bg-gray-200"
@@ -220,7 +220,7 @@ const Header = ({
                           activeFilter === "dayOfWeek" ? null : "dayOfWeek"
                         )
                       }
-                      className={`px-4 py-2.5 rounded-full font-medium transition-colors whitespace-nowrap ${
+                      className={`px-4 py-2 rounded-full font-medium transition-colors whitespace-nowrap ${
                         selectedFilters.dayOfWeek !== "Any day"
                           ? "bg-rose-50 text-rose-600 hover:bg-rose-100"
                           : "bg-gray-100 text-gray-800 hover:bg-gray-200"
@@ -247,7 +247,7 @@ const Header = ({
                           activeFilter === "timeOfDay" ? null : "timeOfDay"
                         )
                       }
-                      className={`px-4 py-2.5 rounded-full font-medium transition-colors whitespace-nowrap ${
+                      className={`px-4 py-2 rounded-full font-medium transition-colors whitespace-nowrap ${
                         selectedFilters.timeOfDay !== "Any time"
                           ? "bg-rose-50 text-rose-600 hover:bg-rose-100"
                           : "bg-gray-100 text-gray-800 hover:bg-gray-200"
@@ -274,7 +274,7 @@ const Header = ({
       </div>
 
       {/* Spacer to prevent content from going under the fixed header */}
-      <div className={`${isScrolled ? "h-[104px]" : "h-[120px]"}`} />
+      <div className={`${isScrolled ? "h-[84px]" : "h-[96px]"}`} />
     </>
   );
 };
