@@ -1,14 +1,44 @@
+"use client";
+
+import { useState } from "react";
 import Header from "./components/header";
 import Map from "./components/map";
+
 export default function Home() {
+  const [showMap, setShowMap] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [userLocation, setUserLocation] = useState<{
+    lng: number;
+    lat: number;
+  } | null>(null);
+
+  const handleSearch = (query: string) => {
+    // This will be handled by the Map component
+    const mapElement = document.querySelector("[data-map-component]");
+    if (mapElement) {
+      const event = new CustomEvent("search", { detail: query });
+      mapElement.dispatchEvent(event);
+    }
+  };
+
   return (
     <>
-      <Header />
+      <Header
+        showMap={showMap}
+        onSearch={handleSearch}
+        userLocation={userLocation}
+        selectedCategory={selectedCategory}
+        onCategoryChange={setSelectedCategory}
+      />
 
-      <main className="pt-20 md:pt-24 min-h-screen bg-gray-50">
-        <div className="max-w-[2520px] mx-auto px-4 sm:px-6 lg:px-8">
-          <Map />
-        </div>
+      <main className="min-h-screen bg-gray-50">
+        <Map
+          showMap={showMap}
+          setShowMap={setShowMap}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          setUserLocation={setUserLocation}
+        />
       </main>
     </>
   );

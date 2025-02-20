@@ -3,7 +3,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useEffect, useRef, useState } from "react";
 import { Deal } from "../data/deals";
-import SearchBar from "./search-bar";
+import DealCard from "./DealCard";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
 
@@ -24,21 +24,31 @@ const categoryConfig = {
   },
 };
 
-const Map = () => {
+interface MapProps {
+  showMap: boolean;
+  setShowMap: (show: boolean) => void;
+  selectedCategory: string;
+  setSelectedCategory: (category: string) => void;
+  setUserLocation: (location: { lng: number; lat: number } | null) => void;
+}
+
+const Map = ({
+  showMap,
+  setShowMap,
+  selectedCategory,
+  setSelectedCategory,
+  setUserLocation,
+}: MapProps) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const [selectedCategory, setSelectedCategory] = useState("All");
   const [map, setMap] = useState<mapboxgl.Map | null>(null);
   const [markers, setMarkers] = useState<Record<number, mapboxgl.Marker>>({});
-  const [userLocation, setUserLocation] = useState<{
-    lng: number;
-    lat: number;
-  } | null>(null);
   const [searchMarker, setSearchMarker] = useState<mapboxgl.Marker | null>(
     null
   );
   const [activePopup, setActivePopup] = useState<number | null>(null);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
 
   useEffect(() => {
     const fetchDeals = async () => {
@@ -58,7 +68,7 @@ const Map = () => {
   }, []);
 
   useEffect(() => {
-    if (!mapContainerRef.current) return;
+    if (!mapContainerRef.current || !showMap) return;
     const newMap = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: "mapbox://styles/mapbox/streets-v11",
@@ -68,10 +78,10 @@ const Map = () => {
 
     setMap(newMap);
     return () => newMap.remove();
-  }, []);
+  }, [showMap]);
 
   useEffect(() => {
-    if (!map || loading) return;
+    if (!map || loading || !showMap) return;
 
     // Remove old markers
     Object.values(markers).forEach((marker) => marker.remove());
@@ -91,7 +101,6 @@ const Map = () => {
         const config =
           categoryConfig[deal.category as keyof typeof categoryConfig];
 
-        // Use the exact coordinates from our database
         const lng = parseFloat(deal.longitude);
         const lat = parseFloat(deal.latitude);
 
@@ -104,43 +113,18 @@ const Map = () => {
           </div>
         `;
 
-        const popup = new mapboxgl.Popup({
-          offset: 25,
-          className: "custom-popup",
-        }).setHTML(`
-          <div class="p-4 min-w-[200px]">
-            <h3 class="font-bold text-gray-900 text-lg mb-1">${deal.title}</h3>
-            ${
-              deal.description
-                ? `<p class="text-gray-600 mb-2">${deal.description}</p>`
-                : ""
-            }
-            ${
-              deal.price
-                ? `<p class="text-gray-900 font-medium mb-2">R${deal.price}</p>`
-                : ""
-            }
-            ${
-              deal.timeWindow
-                ? `<p class="text-gray-600 text-sm">${deal.timeWindow}</p>`
-                : ""
-            }
-            ${
-              deal.day ? `<p class="text-gray-600 text-sm">${deal.day}</p>` : ""
-            }
-            <span class="inline-block px-2 py-1 rounded-full text-sm font-medium mt-2" 
-                  style="background-color: ${config?.color}20; color: ${
-          config?.color
-        }">
-              ${deal.category}
-            </span>
-          </div>
-        `);
-
         const marker = new mapboxgl.Marker({ element: markerElement })
           .setLngLat([lng, lat])
-          .setPopup(popup)
           .addTo(map);
+
+        marker.getElement().addEventListener("click", () => {
+          setSelectedDeal(deal);
+          map.flyTo({
+            center: [lng, lat],
+            zoom: 15,
+            essential: true,
+          });
+        });
 
         newMarkers[deal.id] = marker;
       }
@@ -149,10 +133,10 @@ const Map = () => {
     };
 
     addMarkers();
-  }, [selectedCategory, map, deals, loading]);
+  }, [selectedCategory, map, deals, loading, showMap]);
 
   const handleSearch = async (query: string) => {
-    if (!map) return;
+    if (!map || !showMap) return;
 
     try {
       const response = await fetch(
@@ -195,26 +179,19 @@ const Map = () => {
   };
 
   const handleGetLocation = () => {
-    if (!map || !navigator.geolocation) return;
+    if (!map || !navigator.geolocation || !showMap) return;
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { longitude, latitude } = position.coords;
-        setUserLocation({ lng: longitude, lat: latitude });
+        const location = { lng: longitude, lat: latitude };
+        setUserLocation(location);
 
         map.flyTo({
           center: [longitude, latitude],
           zoom: 14,
           essential: true,
         });
-
-        // Remove existing user location marker if it exists
-        if (userLocation) {
-          const existingMarkers = document.querySelectorAll(
-            ".user-location-marker"
-          );
-          existingMarkers.forEach((marker) => marker.remove());
-        }
 
         // Create marker element
         const markerElement = document.createElement("div");
@@ -237,26 +214,21 @@ const Map = () => {
     );
   };
 
-  const closeAllPopups = () => {
-    Object.values(markers).forEach((marker) => {
-      const popup = marker.getPopup();
-      if (popup && popup.isOpen()) {
-        popup.remove();
-      }
-    });
-    setActivePopup(null);
-  };
+  const filteredDeals =
+    selectedCategory === "All"
+      ? deals
+      : deals.filter((deal) => deal.category === selectedCategory);
 
   return (
     <>
       <style jsx global>{`
-        .custom-popup .mapboxgl-popup-content {
+        .mapboxgl-popup-content {
           padding: 0;
           border-radius: 12px;
           box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1),
             0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
-        .custom-popup .mapboxgl-popup-close-button {
+        .mapboxgl-popup-close-button {
           padding: 6px 10px;
           right: 2px;
           top: 2px;
@@ -265,7 +237,7 @@ const Map = () => {
           font-weight: 500;
           border-radius: 50%;
         }
-        .custom-popup .mapboxgl-popup-close-button:hover {
+        .mapboxgl-popup-close-button:hover {
           background-color: #f3f4f6;
           color: #1f2937;
         }
@@ -282,118 +254,70 @@ const Map = () => {
           background-color: #f3f4f6 !important;
         }
       `}</style>
-      <div className="flex flex-col w-full gap-6">
-        {/* Search bar */}
-        <div className="relative z-10">
-          <SearchBar onSearch={handleSearch} userLocation={userLocation} />
-        </div>
-
-        <div className="flex flex-col lg:flex-row w-full gap-6">
-          {/* Sidebar */}
-          <div className="w-full lg:w-1/3 bg-white rounded-xl shadow-lg h-[400px] lg:h-[800px] overflow-y-auto border border-gray-200">
-            <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Available Deals
-              </h2>
-
-              {/* Category Filter Buttons */}
-              <div className="flex flex-wrap gap-2 mb-6">
-                {categories.map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`px-4 py-1.5 rounded-full font-medium transition-all duration-200 text-sm ${
-                      selectedCategory === category
-                        ? "bg-rose-500 text-white hover:bg-rose-600"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-
-              {/* Deal Listings */}
-              <div className="space-y-3">
-                {loading ? (
-                  <div className="text-gray-600">Loading deals...</div>
-                ) : (
-                  (selectedCategory === "All"
-                    ? deals
-                    : deals.filter((deal) => deal.category === selectedCategory)
-                  ).map((deal) => (
-                    <div
-                      key={deal.id}
-                      onClick={() => {
-                        const marker = markers[deal.id];
-                        if (marker) {
-                          const popup = marker.getPopup();
-                          const [lng, lat] = marker.getLngLat().toArray();
-
-                          map?.flyTo({
-                            center: [lng, lat],
-                            zoom: 15,
-                            duration: 1500,
-                          });
-
-                          if (activePopup === deal.id) {
-                            closeAllPopups();
-                          } else {
-                            closeAllPopups();
-                            if (popup && map) {
-                              popup.addTo(map);
-                            }
-                            setActivePopup(deal.id);
-                          }
-                        }
-                      }}
-                      className="p-4 rounded-lg border border-gray-200 hover:border-gray-300 bg-white hover:shadow-md cursor-pointer transition-all duration-200"
-                    >
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">
-                        {deal.title}
-                      </h3>
-                      {deal.description && (
-                        <p className="text-gray-600 text-sm mb-2">
-                          {deal.description}
-                        </p>
-                      )}
-                      {deal.price && (
-                        <p className="text-gray-900 font-medium mb-2">
-                          R{deal.price}
-                        </p>
-                      )}
-                      {deal.timeWindow && (
-                        <p className="text-gray-600 text-sm">
-                          {deal.timeWindow}
-                        </p>
-                      )}
-                      {deal.day && (
-                        <p className="text-gray-600 text-sm">{deal.day}</p>
-                      )}
-                      <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium mt-2 ${
-                          deal.category === "Food"
-                            ? "bg-red-100 text-red-700"
-                            : deal.category === "Shopping"
-                            ? "bg-purple-100 text-purple-700"
-                            : "bg-emerald-100 text-emerald-700"
-                        }`}
-                      >
-                        {deal.category}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
+      <div
+        data-map-component
+        className={`flex flex-col w-full min-h-screen ${
+          showMap ? "pt-16" : "pt-[120px]"
+        }`}
+      >
+        {/* Main content */}
+        <div className="relative flex-1">
+          {/* Grid view */}
+          <div
+            className={`transition-all duration-300 ${
+              showMap ? "hidden" : "block px-4 sm:px-6 lg:px-8"
+            }`}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
+              {loading ? (
+                <div className="text-gray-600">Loading deals...</div>
+              ) : (
+                filteredDeals.map((deal) => (
+                  <DealCard
+                    key={deal.id}
+                    deal={deal}
+                    onClick={() => {
+                      setShowMap(true);
+                      setSelectedDeal(deal);
+                      const marker = markers[deal.id];
+                      if (marker && map) {
+                        const [lng, lat] = marker.getLngLat().toArray();
+                        map.flyTo({
+                          center: [lng, lat],
+                          zoom: 15,
+                          essential: true,
+                        });
+                      }
+                    }}
+                  />
+                ))
+              )}
             </div>
           </div>
 
-          {/* Map Container */}
-          <div className="flex-1 relative h-[400px] lg:h-[800px]">
+          {/* Map view */}
+          <div
+            className={`absolute inset-0 transition-all duration-300 ${
+              showMap
+                ? "opacity-100 pointer-events-auto"
+                : "opacity-0 pointer-events-none"
+            }`}
+          >
             <div
               ref={mapContainerRef}
-              className="w-full h-full rounded-xl shadow-lg border border-gray-200 overflow-hidden"
+              className="w-full h-full overflow-hidden"
             />
+
+            {/* Selected deal card */}
+            {selectedDeal && showMap && (
+              <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-full max-w-lg px-4">
+                <DealCard
+                  deal={selectedDeal}
+                  onClick={() => setSelectedDeal(null)}
+                />
+              </div>
+            )}
+
             {/* Location Button */}
             <button
               onClick={handleGetLocation}
@@ -422,6 +346,14 @@ const Map = () => {
               </svg>
             </button>
           </div>
+
+          {/* Toggle button */}
+          <button
+            onClick={() => setShowMap(!showMap)}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-gray-900 text-white rounded-full font-medium shadow-lg hover:bg-gray-800 transition-colors duration-200"
+          >
+            {showMap ? "Show list" : "Show map"}
+          </button>
         </div>
       </div>
     </>

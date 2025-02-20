@@ -10,9 +10,10 @@ interface Suggestion {
 interface SearchBarProps {
   onSearch: (query: string) => void;
   userLocation?: { lng: number; lat: number } | null;
+  compact?: boolean;
 }
 
-const SearchBar = ({ onSearch, userLocation }: SearchBarProps) => {
+const SearchBar = ({ onSearch, userLocation, compact }: SearchBarProps) => {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -73,7 +74,10 @@ const SearchBar = ({ onSearch, userLocation }: SearchBarProps) => {
   };
 
   return (
-    <div ref={searchContainerRef} className="relative w-full max-w-3xl mx-auto">
+    <div
+      ref={searchContainerRef}
+      className={compact ? "w-full" : "w-full max-w-3xl mx-auto"}
+    >
       <div className="relative">
         <div className="relative flex items-center">
           <input
@@ -82,12 +86,14 @@ const SearchBar = ({ onSearch, userLocation }: SearchBarProps) => {
             onChange={handleInputChange}
             onFocus={() => setShowSuggestions(true)}
             placeholder="Search location..."
-            className="w-full pl-14 pr-6 py-4 bg-white rounded-full shadow-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-rose-500 transition-shadow duration-200"
+            className={`w-full pl-14 pr-6 ${
+              compact ? "py-2.5" : "py-4"
+            } bg-white rounded-full shadow-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-rose-500 transition-shadow duration-200`}
           />
           <div className="absolute left-5 text-gray-400">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
+              className={`${compact ? "h-4 w-4" : "h-5 w-5"}`}
               viewBox="0 0 20 20"
               fill="currentColor"
             >

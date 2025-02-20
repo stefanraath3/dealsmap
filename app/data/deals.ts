@@ -10,6 +10,7 @@ export interface Deal {
   day: string | null;
   timeWindow: string | null;
   createdAt: Date;
+  images?: string[];
 }
 
 // This will be replaced by the API call
