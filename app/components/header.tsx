@@ -10,7 +10,6 @@ interface HeaderProps {
 
 const Header = ({ showMap, onSearch, userLocation }: HeaderProps) => {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -26,7 +25,7 @@ const Header = ({ showMap, onSearch, userLocation }: HeaderProps) => {
       {/* Top header */}
       <div
         className={`border-b border-gray-200 transition-all duration-300 ${
-          isScrolled ? "py-4" : "py-6"
+          isScrolled ? "py-3" : "py-5"
         }`}
       >
         <div className="max-w-[2520px] mx-auto">
@@ -49,8 +48,6 @@ const Header = ({ showMap, onSearch, userLocation }: HeaderProps) => {
                 <SearchBar
                   onSearch={onSearch}
                   userLocation={userLocation}
-                  isExpanded={isSearchExpanded}
-                  onExpandedChange={setIsSearchExpanded}
                   compact={isScrolled}
                 />
               </div>
