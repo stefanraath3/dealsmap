@@ -1,5 +1,6 @@
 "use client";
 
+import DealPageSkeleton from "@/app/components/DealPageSkeleton";
 import { Deal } from "@/app/data/deals";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -48,11 +49,7 @@ export default function DealPageClient({ id }: { id: string }) {
   }, [deal]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-600">Loading deal...</div>
-      </div>
-    );
+    return <DealPageSkeleton />;
   }
 
   if (!deal) {

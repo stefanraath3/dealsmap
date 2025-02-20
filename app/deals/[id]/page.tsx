@@ -1,10 +1,11 @@
+import DealPageSkeleton from "@/app/components/DealPageSkeleton";
 import { Suspense } from "react";
 import DealPageClient from "./DealPageClient";
 
 // This is the server component that wraps the client component
 export default function DealPage({ params }: { params: { id: string } }) {
   return (
-    <Suspense fallback={<DealPageLoading />}>
+    <Suspense fallback={<DealPageSkeleton />}>
       <DealPageClient id={params.id} />
     </Suspense>
   );
