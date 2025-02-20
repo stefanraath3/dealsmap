@@ -1,4 +1,4 @@
-import { numeric, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
 export const deals = pgTable("deals", {
   id: serial("id").primaryKey(),
@@ -6,6 +6,8 @@ export const deals = pgTable("deals", {
   description: text("description"),
   location: text("location").notNull(),
   category: text("category"),
-  price: numeric("price"),
+  price: text("price"),
+  day: text("day"),
+  timeWindow: text("time_window"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

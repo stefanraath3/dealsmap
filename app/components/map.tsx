@@ -2,7 +2,7 @@
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useEffect, useRef, useState } from "react";
-import { deals } from "../data/deals";
+import { Deal } from "../data/deals";
 import SearchBar from "./search-bar";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
@@ -37,6 +37,25 @@ const Map = () => {
     null
   );
   const [activePopup, setActivePopup] = useState<number | null>(null);
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDeals = async () => {
+      try {
+        const response = await fetch("/api/deals");
+        if (!response.ok) throw new Error("Failed to fetch deals");
+        const data = await response.json();
+        setDeals(data);
+      } catch (error) {
+        console.error("Error fetching deals:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDeals();
+  }, []);
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -52,7 +71,7 @@ const Map = () => {
   }, []);
 
   useEffect(() => {
-    if (!map) return;
+    if (!map || loading) return;
 
     // Remove old markers
     Object.values(markers).forEach((marker) => marker.remove());
@@ -65,45 +84,88 @@ const Map = () => {
         : deals.filter((deal) => deal.category === selectedCategory);
 
     // Add new markers
-    const newMarkers = filteredDeals.reduce(
-      (acc: Record<number, mapboxgl.Marker>, deal) => {
+    const addMarkers = async () => {
+      const newMarkers: Record<number, mapboxgl.Marker> = {};
+
+      for (const deal of filteredDeals) {
         const config =
           categoryConfig[deal.category as keyof typeof categoryConfig];
-        const markerElement = document.createElement("div");
-        markerElement.className = "marker";
-        markerElement.innerHTML = `
-        <div class="w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2"
-             style="background-color: ${config?.color || "#3B82F6"}">
-          ${config?.icon || ""}
-        </div>
-      `;
 
-        const popup = new mapboxgl.Popup({
-          offset: 25,
-          className: "custom-popup",
-        }).setHTML(`
-        <div class="p-4 min-w-[200px]">
-          <h3 class="font-bold text-gray-900 text-lg mb-1">${deal.name}</h3>
-          <span class="inline-block px-2 py-1 rounded-full text-sm font-medium" 
-                style="background-color: ${config?.color}20; color: ${config?.color}">
-            ${deal.category}
-          </span>
-        </div>
-      `);
+        try {
+          // Geocode the location
+          const response = await fetch(
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+              deal.location
+            )}.json?access_token=${mapboxgl.accessToken}&country=ZA`
+          );
+          const data = await response.json();
 
-        const marker = new mapboxgl.Marker({ element: markerElement })
-          .setLngLat([deal.location.lng, deal.location.lat])
-          .setPopup(popup)
-          .addTo(map);
+          if (data.features && data.features.length > 0) {
+            const [lng, lat] = data.features[0].center;
 
-        acc[deal.id] = marker;
-        return acc;
-      },
-      {}
-    );
+            const markerElement = document.createElement("div");
+            markerElement.className = "marker";
+            markerElement.innerHTML = `
+              <div class="w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2"
+                   style="background-color: ${config?.color || "#3B82F6"}">
+                ${config?.icon || ""}
+              </div>
+            `;
 
-    setMarkers(newMarkers);
-  }, [selectedCategory, map]);
+            const popup = new mapboxgl.Popup({
+              offset: 25,
+              className: "custom-popup",
+            }).setHTML(`
+              <div class="p-4 min-w-[200px]">
+                <h3 class="font-bold text-gray-900 text-lg mb-1">${
+                  deal.title
+                }</h3>
+                ${
+                  deal.description
+                    ? `<p class="text-gray-600 mb-2">${deal.description}</p>`
+                    : ""
+                }
+                ${
+                  deal.price
+                    ? `<p class="text-gray-900 font-medium mb-2">R${deal.price}</p>`
+                    : ""
+                }
+                ${
+                  deal.timeWindow
+                    ? `<p class="text-gray-600 text-sm">${deal.timeWindow}</p>`
+                    : ""
+                }
+                ${
+                  deal.day
+                    ? `<p class="text-gray-600 text-sm">${deal.day}</p>`
+                    : ""
+                }
+                <span class="inline-block px-2 py-1 rounded-full text-sm font-medium mt-2" 
+                      style="background-color: ${config?.color}20; color: ${
+              config?.color
+            }">
+                  ${deal.category}
+                </span>
+              </div>
+            `);
+
+            const marker = new mapboxgl.Marker({ element: markerElement })
+              .setLngLat([lng, lat])
+              .setPopup(popup)
+              .addTo(map);
+
+            newMarkers[deal.id] = marker;
+          }
+        } catch (error) {
+          console.error("Error geocoding location:", error);
+        }
+      }
+
+      setMarkers(newMarkers);
+    };
+
+    addMarkers();
+  }, [selectedCategory, map, deals, loading]);
 
   const handleSearch = async (query: string) => {
     if (!map) return;
@@ -269,45 +331,75 @@ const Map = () => {
 
               {/* Deal Listings */}
               <div className="space-y-3">
-                {(selectedCategory === "All"
-                  ? deals
-                  : deals.filter((deal) => deal.category === selectedCategory)
-                ).map((deal) => (
-                  <div
-                    key={deal.id}
-                    onClick={() => {
-                      map?.flyTo({
-                        center: [deal.location.lng, deal.location.lat],
-                        zoom: 15,
-                        duration: 1500,
-                      });
+                {loading ? (
+                  <div className="text-gray-600">Loading deals...</div>
+                ) : (
+                  (selectedCategory === "All"
+                    ? deals
+                    : deals.filter((deal) => deal.category === selectedCategory)
+                  ).map((deal) => (
+                    <div
+                      key={deal.id}
+                      onClick={() => {
+                        const marker = markers[deal.id];
+                        if (marker) {
+                          const popup = marker.getPopup();
+                          const [lng, lat] = marker.getLngLat().toArray();
 
-                      if (activePopup === deal.id) {
-                        closeAllPopups();
-                      } else {
-                        closeAllPopups();
-                        markers[deal.id]?.togglePopup();
-                        setActivePopup(deal.id);
-                      }
-                    }}
-                    className="p-4 rounded-lg border border-gray-200 hover:border-gray-300 bg-white hover:shadow-md cursor-pointer transition-all duration-200"
-                  >
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      {deal.name}
-                    </h3>
-                    <span
-                      className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium ${
-                        deal.category === "Food"
-                          ? "bg-red-100 text-red-700"
-                          : deal.category === "Shopping"
-                          ? "bg-purple-100 text-purple-700"
-                          : "bg-emerald-100 text-emerald-700"
-                      }`}
+                          map?.flyTo({
+                            center: [lng, lat],
+                            zoom: 15,
+                            duration: 1500,
+                          });
+
+                          if (activePopup === deal.id) {
+                            closeAllPopups();
+                          } else {
+                            closeAllPopups();
+                            if (popup && map) {
+                              popup.addTo(map);
+                            }
+                            setActivePopup(deal.id);
+                          }
+                        }
+                      }}
+                      className="p-4 rounded-lg border border-gray-200 hover:border-gray-300 bg-white hover:shadow-md cursor-pointer transition-all duration-200"
                     >
-                      {deal.category}
-                    </span>
-                  </div>
-                ))}
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        {deal.title}
+                      </h3>
+                      {deal.description && (
+                        <p className="text-gray-600 text-sm mb-2">
+                          {deal.description}
+                        </p>
+                      )}
+                      {deal.price && (
+                        <p className="text-gray-900 font-medium mb-2">
+                          R{deal.price}
+                        </p>
+                      )}
+                      {deal.timeWindow && (
+                        <p className="text-gray-600 text-sm">
+                          {deal.timeWindow}
+                        </p>
+                      )}
+                      {deal.day && (
+                        <p className="text-gray-600 text-sm">{deal.day}</p>
+                      )}
+                      <span
+                        className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium mt-2 ${
+                          deal.category === "Food"
+                            ? "bg-red-100 text-red-700"
+                            : deal.category === "Shopping"
+                            ? "bg-purple-100 text-purple-700"
+                            : "bg-emerald-100 text-emerald-700"
+                        }`}
+                      >
+                        {deal.category}
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
