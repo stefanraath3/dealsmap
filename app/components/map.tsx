@@ -273,23 +273,7 @@ const Map = ({
                 <div className="text-gray-600">Loading deals...</div>
               ) : (
                 filteredDeals.map((deal) => (
-                  <DealCard
-                    key={deal.id}
-                    deal={deal}
-                    onClick={() => {
-                      setShowMap(true);
-                      setSelectedDeal(deal);
-                      const marker = markers[deal.id];
-                      if (marker && map) {
-                        const [lng, lat] = marker.getLngLat().toArray();
-                        map.flyTo({
-                          center: [lng, lat],
-                          zoom: 15,
-                          essential: true,
-                        });
-                      }
-                    }}
-                  />
+                  <DealCard key={deal.id} deal={deal} />
                 ))
               )}
             </div>
@@ -311,10 +295,26 @@ const Map = ({
             {/* Selected deal card */}
             {selectedDeal && showMap && (
               <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-full max-w-lg px-4">
-                <DealCard
-                  deal={selectedDeal}
-                  onClick={() => setSelectedDeal(null)}
-                />
+                <div className="relative">
+                  <button
+                    onClick={() => setSelectedDeal(null)}
+                    className="absolute -top-2 -right-2 z-10 p-1 bg-white rounded-full shadow-lg hover:bg-gray-50"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 text-gray-500"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                  <DealCard deal={selectedDeal} />
+                </div>
               </div>
             )}
 
