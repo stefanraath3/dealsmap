@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1739980886220,
-      "tag": "0000_round_mach_iv",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1740059739681,
-      "tag": "0001_normal_fantastic_four",
+      "when": 1740063833588,
+      "tag": "0000_mean_doctor_faustus",
       "breakpoints": true
     }
   ]
