@@ -23,7 +23,7 @@ A Next.js application that maps and tracks food & drink specials across Cape Tow
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/dealsmap.git
+git clone https://github.com/stefanraath3/dealsmap.git
 cd dealsmap
 ```
 
