@@ -1,10 +1,15 @@
+import "dotenv/config";
 import pkg from "pg";
 const { Client } = pkg;
 
 async function testConnection() {
-  // Try with pool format
-  const connectionString =
-    "postgresql://postgres.whwvibodnmcepobycjvr:zzMe5CFrClFFMCfh@aws-0-eu-central-1.pooler.supabase.com:5432/postgres";
+  // Use environment variable for connection string
+  const connectionString = process.env.DATABASE_URL;
+
+  if (!connectionString) {
+    console.error("DATABASE_URL environment variable is not set");
+    process.exit(1);
+  }
 
   console.log("Testing connection...");
 
@@ -56,13 +61,5 @@ async function testConnection() {
   }
 }
 
-// Get password from command line argument
-process.env.DB_PASSWORD = process.argv[2];
-if (!process.env.DB_PASSWORD) {
-  console.error(
-    "Please provide the database password as a command line argument"
-  );
-  process.exit(1);
-}
-
+// Run test connection
 testConnection();
