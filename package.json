@@ -14,9 +14,10 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.48.1",
+    "@types/pg": "^8.11.11",
     "clsx": "^2.1.1",
     "dotenv": "^16.4.7",
-    "drizzle-orm": "^0.39.3",
+    "drizzle-orm": "^0.40.0",
     "mapbox-gl": "^3.10.0",
     "next": "15.1.7",
     "pg": "^8.13.3",

@@ -64,11 +64,20 @@ const Map = ({
     const fetchDeals = async () => {
       try {
         const response = await fetch("/api/deals");
-        if (!response.ok) throw new Error("Failed to fetch deals");
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          console.error("API error response:", errorData);
+          throw new Error(
+            errorData?.message || `Failed to fetch deals: ${response.status}`
+          );
+        }
         const data = await response.json();
+        console.log(`Successfully loaded ${data.length} deals`);
         setDeals(data);
       } catch (error) {
         console.error("Error fetching deals:", error);
+        // Set error state but don't stop the app from rendering
+        setDeals([]);
       } finally {
         setLoading(false);
       }
